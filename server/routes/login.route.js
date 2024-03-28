@@ -49,7 +49,14 @@ module.exports ={
                       pre: API.logout.pre,
                       handler: API.logout.handler
                   }
-              }
+              }, {
+                method: 'POST',
+                path: '/changePassword',
+                config: {
+                    pre: API.changePassword.pre,
+                    handler: API.changePassword.handler
+                }
+            }
             ])
         },
         version: require('../../package.json').version,
