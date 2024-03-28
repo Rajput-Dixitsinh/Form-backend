@@ -2,6 +2,7 @@ const Users = require("../models/users.model.js");
 const Cookie = require("@hapi/cookie");
 var jwt = require("jsonwebtoken");
 const authvalidator = require("@validator/auth.validator");
+const bcrypt = require('bcrypt');
 module.exports = {
   createUser: {
     validate: authvalidator.signUp,
@@ -105,7 +106,6 @@ module.exports = {
             const refreshToken = await userToken.generateRefreshToken();
             const accessToken = await userToken.generateAccessToken();
 
-
             // remove password and refrace token
 
             const logdinUser = await Users.findById(user._id).select(
@@ -116,6 +116,9 @@ module.exports = {
               httpOnly: true,
               secure: true,
             };
+
+            // h.state('refreshToken', refreshToken, option);
+            // h.state('accessToken', accessToken, option);
 
             return h
               .response({
@@ -142,7 +145,7 @@ module.exports = {
         assign: "logoutUser",
         method: async (request, h) => {
           try {
-            return h.response({ message: "User Logged out successfully!" })
+            return h.response({ message: "User Logged out successfully!" });
           } catch (err) {
             return h.response({ error: "Something went wrong!" }).code(401);
           }
@@ -151,6 +154,80 @@ module.exports = {
     ],
     handler: async (request, h) => {
       return h.response(request.pre.logoutUser).code(200);
+    },
+  },
+  changePassword: {
+    pre: [
+      {
+        assign: "changePassword",
+        method: async (req, h, next) => {
+          try {
+            // console.log("hello");
+            // console.log(req);
+            const { token, oldPassword, newPassword } = req.payload;
+            console.log(token, oldPassword, newPassword);
+            let decodedToken;
+            try {
+              decodedToken = jwt.verify(token, "rtetretertre");
+            } catch (error) {
+              return h.response({ message: "Invalid token" }).code(400);
+            }
+
+            // Extract email from token payload
+            const userEmail = decodedToken.email;
+            console.log(userEmail);
+
+            const user = await Users.findOne({ email: userEmail });
+            console.log("user is " + user);
+            if (!user) {
+              return h.response({ message: "User not found" }).code(404);
+            }
+            // Compare old password with hashed password stored in database
+            const passwordMatch = await bcrypt.compare(
+              oldPassword,
+              user.password
+            );
+            console.log(passwordMatch);
+            console.log("password match");
+
+            if (!passwordMatch) {
+              return h
+                .response({ message: "Old password is incorrect" })
+                .code(400);
+            }
+
+            // Hash new password
+            const hashedPassword = await bcrypt.hash(newPassword, 10);
+            console.log(hashedPassword);
+
+            // Update user's password
+            user.password = hashedPassword;
+            await user.save();
+            
+            
+            if (!isPasswordCorrect) {
+              throw new Error(400, "Invalid password");
+            }
+
+            user.password = newPassword;
+
+            console.log(user.password);
+
+            await user.save((validateBeforSave = false));
+
+            return h
+              .response({
+                message: "passswoed changed successfully",
+              })
+              .code(200);
+          } catch (error) {
+            throw new Error(401, error?.message || "Invalid access token");
+          }
+        },
+      },
+    ],
+    handler: async (request, h) => {
+      return h.response(request.pre.changePassword).code(200);
     },
   },
 };

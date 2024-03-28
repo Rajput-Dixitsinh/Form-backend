@@ -46,8 +46,8 @@ signUpSchema.pre("save", async function (next) {
     this.password = await bcrypt.hash(this.password, 10)
     next()
 })
-signUpSchema.methods.isPasswordCorrect = async function(password){
-    return await bcrypt.compare(password, this.password)
+signUpSchema.methods.isPasswordCorrect = async function(Password){
+    return await bcrypt.compare(Password, this.password)
 }
 
 signUpSchema.methods.generateAccessToken = function() {
