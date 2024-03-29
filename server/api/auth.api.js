@@ -165,7 +165,7 @@ module.exports = {
             // console.log("hello");
             // console.log(req);
             const { token, oldPassword, newPassword } = req.payload;
-            console.log(token, oldPassword, newPassword);
+            // console.log(token, oldPassword, newPassword);
             let decodedToken;
             try {
               decodedToken = jwt.verify(token, "rtetretertre");
@@ -174,41 +174,24 @@ module.exports = {
             }
 
             // Extract email from token payload
-            const userEmail = decodedToken.email;
-            console.log(userEmail);
+            const _id = decodedToken._id;
+            console.log(_id);
 
-            const user = await Users.findOne({ email: userEmail });
-            console.log("user is " + user);
+            const user = await Users.findById({ _id: _id });
+            // console.log("user is " + user);
             if (!user) {
               return h.response({ message: "User not found" }).code(404);
             }
-            // Compare old password with hashed password stored in database
-            const passwordMatch = await bcrypt.compare(
-              oldPassword,
-              user.password
-            );
-            console.log(passwordMatch);
-            console.log("password match");
-
-            if (!passwordMatch) {
-              return h
-                .response({ message: "Old password is incorrect" })
-                .code(400);
-            }
-
-            // Hash new password
-            const hashedPassword = await bcrypt.hash(newPassword, 10);
-            console.log(hashedPassword);
-
-            // Update user's password
-            user.password = hashedPassword;
-            await user.save();
-            
-            
+           
+           const isPasswordCorrect = await bcrypt.compare(oldPassword, user.password)
+          
+            // const isPasswordCorrect = await Users.isPasswordCorrect(oldPassword);
+            console.log(isPasswordCorrect);
             if (!isPasswordCorrect) {
               throw new Error(400, "Invalid password");
             }
-
+            
+            // return true;
             user.password = newPassword;
 
             console.log(user.password);
